@@ -5,9 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 const app = express();
 app.use(express.json());
 
-// Add CORS middleware
+// Update CORS middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app'],
+  origin: [
+    'http://localhost:3000',
+    'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
+    'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app'
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
