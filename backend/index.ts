@@ -14,7 +14,8 @@ app.use(cors({
     'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
     'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app',
     'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-k75hjniqu-yakirs-projects-fb10a48e.vercel.app'
+    'https://bitbudpay-frontend-k75hjniqu-yakirs-projects-fb10a48e.vercel.app',
+    'https://bitbudpay-frontend-o1zf9azi7-yakirs-projects-fb10a48e.vercel.app' // New origin
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
@@ -36,7 +37,10 @@ const supabase = createClient(
 const testSupabaseConnection = async () => {
   try {
     const { data, error } = await supabase.from('users').select('count').single();
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase connection test error:', error);
+      throw error;
+    }
     console.log('Supabase connection test successful:', data);
   } catch (err: any) {
     console.error('Supabase connection test failed:', err.message, err.stack);
