@@ -8,15 +8,28 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`Request: ${req.method} ${req.url} Origin: ${req.headers.origin}`);
+  next();
+});
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-k75hjniqu-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-o1zf9azi7-yakirs-projects-fb10a48e.vercel.app' // New origin
-  ],
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
+      'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app',
+      'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app',
+      'https://bitbudpay-frontend-k75hjniqu-yakirs-projects-fb10a48e.vercel.app',
+      'https://bitbudpay-frontend-o1zf9azi7-yakirs-projects-fb10a48e.vercel.app'
+    ];
+    console.log(`CORS check for origin: ${origin}`);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`CORS rejected for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   credentials: false
@@ -56,6 +69,37 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     return;
   }
   try {
+    // Check if user already exists
+    console.log(`Checking for existing user: username=${username}, email=${email}`);
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('wallet_id, wallet_address, circle_id')
+      .eq('username', username)
+      .single();
+    
+    if (existingUser) {
+      console.log(`User found: ${username}`);
+      if (existingUser.email !== email) {
+        res.status(409).json({ error: 'Username already exists with a different email' });
+        return;
+      }
+      // Return existing user data
+      res.json({
+        success: true,
+        walletId: existingUser.wallet_id,
+        walletAddress: existingUser.wallet_address,
+        circleId: existingUser.circle_id
+      });
+      return;
+    }
+    
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116: No rows found
+      console.error('Supabase check error:', checkError);
+      res.status(500).json({ error: 'Supabase check failed', details: checkError.message });
+      return;
+    }
+
+    // Create Circle user
     console.log(`Creating Circle user: ${username}`);
     let circleId = null;
     try {
@@ -75,36 +119,23 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       console.error('Circle API error:', circleErr.response?.data || circleErr.message);
     }
 
+    // Upsert new user
     console.log(`Upserting user: username=${username}, email=${email}, circle_id=${circleId}`);
-    const { error: upsertError } = await supabase.from('users').upsert({
+    const { data, error: upsertError } = await supabase.from('users').upsert({
       username,
       email,
-      circle_id: circleId
-    });
+      circle_id: circleId,
+      wallet_id: `e100f4c8-e9ff-500f-92db-4165510e3ff4`, // Placeholder, replace with actual wallet logic
+      wallet_address: `0xf0070f42abb054fcac702d7c163905bcf2e6d409` // Placeholder
+    }).select('wallet_id, wallet_address, circle_id').single();
+    
     if (upsertError) {
       console.error('Supabase upsert error:', upsertError);
       res.status(500).json({ error: 'Supabase upsert failed', details: upsertError.message });
       return;
     }
-
-    console.log(`Querying user: username=${username}, email=${email}`);
-    const { data, error } = await supabase
-      .from('users')
-      .select('wallet_id, wallet_address, circle_id')
-      .eq('username', username)
-      .eq('email', email)
-      .single();
-    if (error) {
-      console.error('Supabase query error:', error.message, error.details, error.hint);
-      res.status(404).json({ error: 'User not found', details: error.message });
-      return;
-    }
-    if (!data) {
-      console.error('No user found for:', { username, email });
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-    console.log('User found:', data);
+    
+    console.log('User created:', data);
     res.json({
       success: true,
       walletId: data.wallet_id,
