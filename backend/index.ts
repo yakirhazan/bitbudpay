@@ -3,24 +3,27 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 
 const app = express();
-app.use(express.json());
 
-// Update CORS middleware
+// Middleware
+app.use(express.json());
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app'
+    'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app',
+    'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
 
+// Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
   process.env.SUPABASE_KEY || ''
 );
 
+// KYC handler
 const kycHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { username, email } = req.body;
   if (!username || !email) {
@@ -52,8 +55,10 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
   }
 };
 
+// Routes
 app.post('/api/kyc', kycHandler);
 
+// Start server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

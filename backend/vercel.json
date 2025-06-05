@@ -11,5 +11,15 @@
       "src": "/api/(.*)",
       "dest": "index.ts"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "http://localhost:3000,https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app,https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app,https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
+    }
   ]
 }
