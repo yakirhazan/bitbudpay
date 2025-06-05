@@ -21,13 +21,14 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const apiUrl = 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setResponse(null);
 
-    const apiUrl = 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app';
     const kycEndpoint = `${apiUrl}/api/kyc`;
     console.log('Hardcoded API URL:', apiUrl);
     console.log('Constructed fetch URL:', kycEndpoint);
@@ -37,7 +38,7 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': window.location.origin
+          'Origin': window.location.origin,
         },
         body: JSON.stringify({ username, email }),
       });
@@ -76,7 +77,9 @@ export default function Home() {
         <p>API URL Debug: Hardcoded to {apiUrl}</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium">Username</label>
+            <label htmlFor="username" className="block text-sm font-medium">
+              Username
+            </label>
             <input
               id="username"
               type="text"
@@ -87,7 +90,9 @@ export default function Home() {
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -108,9 +113,17 @@ export default function Home() {
         {error && <p className="text-red-500">{error}</p>}
         {response && (
           <div className="mt-4 p-4 border rounded-md w-full">
-            <p><strong>Wallet ID:</strong> {response.walletId}</p>
-            <p><strong>Wallet Address:</strong> {response.walletAddress}</p>
-            {response.circleId && <p><strong>Circle ID:</strong> {response.circleId}</p>}
+            <p>
+              <strong>Wallet ID:</strong> {response.walletId}
+            </p>
+            <p>
+              <strong>Wallet Address:</strong> {response.walletAddress}
+            </p>
+            {response.circleId && (
+              <p>
+                <strong>Circle ID:</strong> {response.circleId}
+              </p>
+            )}
           </div>
         )}
       </main>
