@@ -27,17 +27,10 @@ export default function Home() {
     setError('');
     setResponse(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app';
+    const apiUrl = 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app';
     const kycEndpoint = `${apiUrl}/api/kyc`;
-    console.log('Raw API URL:', process.env.NEXT_PUBLIC_API_URL);
-    console.log('Resolved API URL:', apiUrl);
+    console.log('Hardcoded API URL:', apiUrl);
     console.log('Constructed fetch URL:', kycEndpoint);
-
-    if (!apiUrl) {
-      setError('API URL is not configured');
-      setLoading(false);
-      return;
-    }
 
     try {
       const res = await fetch(kycEndpoint, {
@@ -80,7 +73,7 @@ export default function Home() {
           style={{ width: 'auto', height: 'auto' }}
         />
         <h1 className="text-2xl font-bold">KYC Verification</h1>
-        <p>API URL Debug: {process.env.NEXT_PUBLIC_API_URL || 'Not set'}</p>
+        <p>API URL Debug: Hardcoded to {apiUrl}</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
           <div>
             <label htmlFor="username" className="block text-sm font-medium">Username</label>
