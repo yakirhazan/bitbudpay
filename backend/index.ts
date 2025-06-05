@@ -64,9 +64,14 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
 // Routes
 app.post('/api/kyc', kycHandler);
 
-// Debug route
+// Root route
 app.get('/', (req: Request, res: Response) => {
-  res.status(200).send('BitBudPay Backend is running!');
+  res.status(200).json({ message: 'BitBudPay Backend is running!' });
+});
+
+// Catch-all for undefined routes
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Start server

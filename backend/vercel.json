@@ -12,7 +12,7 @@
       "dest": "/index.ts"
     },
     {
-      "src": "/",
+      "src": "/(.*)",
       "dest": "/index.ts"
     }
   ]
