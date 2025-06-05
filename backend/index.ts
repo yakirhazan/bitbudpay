@@ -79,7 +79,7 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       circleId: data.circle_id
     });
   } catch (err) {
-    console.error('KYC error);
+    console.error('KYC error:', err);
     res.status(500).json({ error: 'Internal server error' });
     next(err);
   }
