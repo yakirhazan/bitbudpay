@@ -6,6 +6,8 @@ import axios from 'axios';
 
 const app = express();
 
+console.log('Starting BitBudPay Backend...');
+
 // Middleware
 app.use(express.json());
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -35,12 +37,10 @@ app.use(cors({
   credentials: false
 }));
 
-// Explicitly handle OPTIONS preflight
-app.options('*', cors());
-
 // Supabase client
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL || 'Missing');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Set' : 'Missing');
+console.log('CIRCLE_API_KEY:', process.env.CIRCLE_API_KEY ? 'Set' : 'Missing');
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
   process.env.SUPABASE_KEY || ''
@@ -51,7 +51,7 @@ const testSupabaseConnection = async () => {
   try {
     const { data, error } = await supabase.from('users').select('count').single();
     if (error) {
-      console.error('Supabase connection test error:', error);
+      console.error('Supabase connection test error:', JSON.stringify(error));
       throw error;
     }
     console.log('Supabase connection test successful:', data);
@@ -63,13 +63,12 @@ testSupabaseConnection();
 
 // KYC handler
 const kycHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { username, email } = req.body;
-  if (!username || !email) {
-    res.status(400).json({ error: 'Missing username or email' });
-    return;
-  }
   try {
-    // Check if user already exists
+    const { username, email } = req.body;
+    if (!username || !email) {
+      res.status(400).json({ error: 'Missing username or email' });
+      return;
+    }
     console.log(`Checking for existing user: username=${username}, email=${email}`);
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
@@ -83,7 +82,6 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
         res.status(409).json({ error: 'Username already exists with a different email' });
         return;
       }
-      // Return existing user data
       res.json({
         success: true,
         walletId: existingUser.wallet_id,
@@ -93,13 +91,12 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       return;
     }
     
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116: No rows found
-      console.error('Supabase check error:', checkError);
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Supabase check error:', JSON.stringify(checkError));
       res.status(500).json({ error: 'Supabase check failed', details: checkError.message });
       return;
     }
 
-    // Create Circle user
     console.log(`Creating Circle user: ${username}`);
     let circleId = null;
     try {
@@ -119,18 +116,17 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       console.error('Circle API error:', circleErr.response?.data || circleErr.message);
     }
 
-    // Upsert new user
     console.log(`Upserting user: username=${username}, email=${email}, circle_id=${circleId}`);
     const { data, error: upsertError } = await supabase.from('users').upsert({
       username,
       email,
       circle_id: circleId,
-      wallet_id: `e100f4c8-e9ff-500f-92db-4165510e3ff4`, // Placeholder
-      wallet_address: `0xf0070f42abb054fcac702d7c163905bcf2e6d409` // Placeholder
+      wallet_id: `e100f4c8-e9ff-500f-92db-4165510e3ff4`,
+      wallet_address: `0xf0070f42abb054fcac702d7c163905bcf2e6d409`
     }).select('wallet_id, wallet_address, circle_id').single();
     
     if (upsertError) {
-      console.error('Supabase upsert error:', upsertError);
+      console.error('Supabase upsert error:', JSON.stringify(upsertError));
       res.status(500).json({ error: 'Supabase upsert failed', details: upsertError.message });
       return;
     }
@@ -152,14 +148,28 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
 // Routes
 app.post('/api/kyc', kycHandler);
 
+// Test route
+app.get('/test', (req: Request, res: Response) => {
+  console.log('Test route hit');
+  res.status(200).json({ message: 'Test route working' });
+});
+
 // Root route
 app.get('/', (req: Request, res: Response) => {
+  console.log('Root route hit');
   res.status(200).json({ message: 'BitBudPay Backend is running!' });
 });
 
 // Catch-all for undefined routes
 app.use((req: Request, res: Response) => {
+  console.log(`Not found: ${req.method} ${req.url}`);
   res.status(404).json({ error: 'Route not found' });
+});
+
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Global error:', err.message, err.stack);
+  res.status(500).json({ error: 'Unexpected server error', details: err.message });
 });
 
 // Start server
