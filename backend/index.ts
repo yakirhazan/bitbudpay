@@ -2,6 +2,7 @@ require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
 
 const app = express();
 
@@ -37,25 +38,48 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     return;
   }
   try {
-    console.log(`Fetching user: ${username}, ${email}`);
+    console.log(`Creating Circle user: ${username}`);
+    const userResponse = await axios.post(
+      'https://api-sandbox.circle.com/v1/w3s/users',
+      { userId: username },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CIRCLE_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    await supabase.from('users').upsert({
+      username,
+      email,
+      circle_id: userResponse.data.data.userId
+    });
+    console.log(`Querying user: username=${username}, email=${email}`);
     const { data, error } = await supabase
       .from('users')
-      .select('wallet_id, wallet_address')
+      .select('wallet_id, wallet_address, circle_id')
       .eq('username', username)
       .eq('email', email)
       .single();
-    if (error || !data) {
-      console.error('Supabase error:', error);
+    if (error) {
+      console.error('Supabase query error:', error);
+      res.status(404).json({ error: 'User not found', details: error.message });
+      return;
+    }
+    if (!data) {
+      console.error('No user found for:', { username, email });
       res.status(404).json({ error: 'User not found' });
       return;
     }
+    console.log('User found:', data);
     res.json({
       success: true,
       walletId: data.wallet_id,
       walletAddress: data.wallet_address,
+      circleId: data.circle_id
     });
   } catch (err) {
-    console.error('KYC error:', err);
+    console.error('KYC error);
     res.status(500).json({ error: 'Internal server error' });
     next(err);
   }
