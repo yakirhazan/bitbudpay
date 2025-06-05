@@ -24,7 +24,7 @@ app.use(cors({
 app.options('*', cors());
 
 // Supabase client
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL || 'Missing');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Set' : 'Missing');
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -35,10 +35,13 @@ const supabase = createClient(
 const testSupabaseConnection = async () => {
   try {
     const { data, error } = await supabase.from('users').select('count').single();
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase connection test error:', error.message, error.details, error.hint);
+      throw error;
+    }
     console.log('Supabase connection test successful:', data);
-  } catch (err) {
-    console.error('Supabase connection test failed:', err);
+  } catch (err: any) {
+    console.error('Supabase connection test failed:', err.message, err.stack);
   }
 };
 testSupabaseConnection();
@@ -51,7 +54,7 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     return;
   }
   try {
-    console.log(`Querying user: username=${username}, email=${email}`);
+    console.log(`Attempting to query Supabase for user: username=${username}, email=${email}`);
     const { data, error } = await supabase
       .from('users')
       .select('wallet_id, wallet_address')
@@ -59,8 +62,8 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       .eq('email', email)
       .single();
     if (error) {
-      console.error('Supabase query error:', error);
-      res.status(404).json({ error: 'User not found', details: error.message });
+      console.error('Supabase query error:', error.message, error.details, error.hint);
+      res.status(404).json({ error: 'User query failed', details: error.message });
       return;
     }
     if (!data) {
