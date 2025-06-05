@@ -12,11 +12,16 @@ app.use(cors({
     'http://localhost:3000',
     'https://bitbudpay-frontend-hd9b52hri-yakirs-projects-fb10a48e.vercel.app',
     'https://bitbudpay-frontend-7bnnsdrtx-yakirs-projects-fb10a48e.vercel.app',
-    'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app'
+    'https://bitbudpay-frontend-cwrjoyvwa-yakirs-projects-fb10a48e.vercel.app',
+    'https://bitbudpay-frontend-k75hjniqu-yakirs-projects-fb10a48e.vercel.app'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
+  credentials: false
 }));
+
+// Explicitly handle OPTIONS preflight
+app.options('*', cors());
 
 // Supabase client
 const supabase = createClient(
@@ -61,7 +66,7 @@ app.post('/api/kyc', kycHandler);
 
 // Debug route
 app.get('/', (req: Request, res: Response) => {
-  res.send('BitBudPay Backend is running!');
+  res.status(200).send('BitBudPay Backend is running!');
 });
 
 // Start server
