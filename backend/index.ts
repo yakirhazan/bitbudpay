@@ -73,7 +73,7 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     console.log(`Checking for existing user: username=${username}, email=${email}`);
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('wallet_id, wallet_address, circle_id')
+      .select('wallet_id, wallet_address, circle_id, email')
       .eq('username', username)
       .single();
     
@@ -125,7 +125,7 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       username,
       email,
       circle_id: circleId,
-      wallet_id: `e100f4c8-e9ff-500f-92db-4165510e3ff4`, // Placeholder, replace with actual wallet logic
+      wallet_id: `e100f4c8-e9ff-500f-92db-4165510e3ff4`, // Placeholder
       wallet_address: `0xf0070f42abb054fcac702d7c163905bcf2e6d409` // Placeholder
     }).select('wallet_id, wallet_address, circle_id').single();
     
