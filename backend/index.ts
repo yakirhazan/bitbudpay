@@ -1,3 +1,4 @@
+require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
