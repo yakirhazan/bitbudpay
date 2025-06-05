@@ -2,7 +2,6 @@ require('dotenv').config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
-import axios from 'axios';
 
 const app = express();
 
@@ -25,10 +24,24 @@ app.use(cors({
 app.options('*', cors());
 
 // Supabase client
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Set' : 'Missing');
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
   process.env.SUPABASE_KEY || ''
 );
+
+// Test Supabase connection
+const testSupabaseConnection = async () => {
+  try {
+    const { data, error } = await supabase.from('users').select('count').single();
+    if (error) throw error;
+    console.log('Supabase connection test successful:', data);
+  } catch (err) {
+    console.error('Supabase connection test failed:', err);
+  }
+};
+testSupabaseConnection();
 
 // KYC handler
 const kycHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -38,41 +51,10 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     return;
   }
   try {
-    console.log(`Creating Circle user: ${username}`);
-    let circleId = null;
-    try {
-      const userResponse = await axios.post(
-        'https://api-sandbox.circle.com/v1/w3s/users',
-        { userId: username },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.CIRCLE_API_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      circleId = userResponse.data.data.userId;
-      console.log(`Circle user created: ${circleId}`);
-    } catch (circleErr: any) {
-      console.error('Circle API error:', circleErr.response?.data || circleErr.message);
-    }
-
-    console.log(`Upserting user: username=${username}, email=${email}, circle_id=${circleId}`);
-    const { error: upsertError } = await supabase.from('users').upsert({
-      username,
-      email,
-      circle_id: circleId
-    });
-    if (upsertError) {
-      console.error('Supabase upsert error:', upsertError);
-      res.status(500).json({ error: 'Supabase upsert failed', details: upsertError.message });
-      return;
-    }
-
     console.log(`Querying user: username=${username}, email=${email}`);
     const { data, error } = await supabase
       .from('users')
-      .select('wallet_id, wallet_address, circle_id')
+      .select('wallet_id, wallet_address')
       .eq('username', username)
       .eq('email', email)
       .single();
@@ -90,8 +72,7 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
     res.json({
       success: true,
       walletId: data.wallet_id,
-      walletAddress: data.wallet_address,
-      circleId: data.circle_id
+      walletAddress: data.wallet_address
     });
   } catch (err: any) {
     console.error('KYC error:', err.message, err.stack);
