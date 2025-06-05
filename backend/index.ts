@@ -59,6 +59,11 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
 // Routes
 app.post('/api/kyc', kycHandler);
 
+// Debug route
+app.get('/', (req: Request, res: Response) => {
+  res.send('BitBudPay Backend is running!');
+});
+
 // Start server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
