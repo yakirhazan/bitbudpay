@@ -33,6 +33,12 @@ export default function Home() {
     console.log('Resolved API URL:', apiUrl);
     console.log('Constructed fetch URL:', kycEndpoint);
 
+    if (!apiUrl) {
+      setError('API URL is not configured');
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(kycEndpoint, {
         method: 'POST',
