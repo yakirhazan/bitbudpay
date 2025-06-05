@@ -39,21 +39,36 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
   }
   try {
     console.log(`Creating Circle user: ${username}`);
-    const userResponse = await axios.post(
-      'https://api-sandbox.circle.com/v1/w3s/users',
-      { userId: username },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.CIRCLE_API_KEY}`,
-          'Content-Type': 'application/json'
+    let circleId = null;
+    try {
+      const userResponse = await axios.post(
+        'https://api-sandbox.circle.com/v1/w3s/users',
+        { userId: username },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.CIRCLE_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
-    await supabase.from('users').upsert({
+      );
+      circleId = userResponse.data.data.userId;
+      console.log(`Circle user created: ${circleId}`);
+    } catch (circleErr: any) {
+      console.error('Circle API error:', circleErr.response?.data || circleErr.message);
+    }
+
+    console.log(`Upserting user: username=${username}, email=${email}, circle_id=${circleId}`);
+    const { error: upsertError } = await supabase.from('users').upsert({
       username,
       email,
-      circle_id: userResponse.data.data.userId
+      circle_id: circleId
     });
+    if (upsertError) {
+      console.error('Supabase upsert error:', upsertError);
+      res.status(500).json({ error: 'Supabase upsert failed', details: upsertError.message });
+      return;
+    }
+
     console.log(`Querying user: username=${username}, email=${email}`);
     const { data, error } = await supabase
       .from('users')
@@ -78,9 +93,9 @@ const kycHandler = async (req: Request, res: Response, next: NextFunction): Prom
       walletAddress: data.wallet_address,
       circleId: data.circle_id
     });
-  } catch (err) {
-    console.error('KYC error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (err: any) {
+    console.error('KYC error:', err.message, err.stack);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
     next(err);
   }
 };
