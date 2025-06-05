@@ -27,21 +27,33 @@ export default function Home() {
     setError('');
     setResponse(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bitbudpay-backend-eidmyix1n-yakirs-projects-fb10a48e.vercel.app';
-    console.log('API URL:', apiUrl);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const kycEndpoint = apiUrl ? `${apiUrl}/api/kyc` : 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app/api/kyc';
+    console.log('Raw API URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('Resolved API URL:', apiUrl);
+    console.log('Constructed fetch URL:', kycEndpoint);
+
+    if (!apiUrl) {
+      console.warn('API URL not set, using fallback:', kycEndpoint);
+    }
 
     try {
-      const res = await fetch(`${apiUrl}/api/kyc`, {
+      const res = await fetch(kycEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
+        },
         body: JSON.stringify({ username, email }),
       });
+      console.log('Fetch response status:', res.status);
       const data: KycResponse | ErrorResponse = await res.json();
+      console.log('Fetch response data:', data);
       if (!res.ok) {
         if ('error' in data) {
           throw new Error(data.error);
         }
-        throw new Error('Request failed');
+        throw new Error(`Request failed: ${res.status}`);
       }
       if ('success' in data) {
         setResponse(data);
@@ -66,6 +78,7 @@ export default function Home() {
           style={{ width: 'auto', height: 'auto' }}
         />
         <h1 className="text-2xl font-bold">KYC Verification</h1>
+        <p>API URL Debug: {process.env.NEXT_PUBLIC_API_URL || 'Not set'}</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
           <div>
             <label htmlFor="username" className="block text-sm font-medium">Username</label>
