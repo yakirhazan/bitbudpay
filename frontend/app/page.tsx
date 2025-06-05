@@ -27,15 +27,11 @@ export default function Home() {
     setError('');
     setResponse(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const kycEndpoint = apiUrl ? `${apiUrl}/api/kyc` : 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app/api/kyc';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bitbudpay-backend-4l8mxehxk-yakirs-projects-fb10a48e.vercel.app';
+    const kycEndpoint = `${apiUrl}/api/kyc`;
     console.log('Raw API URL:', process.env.NEXT_PUBLIC_API_URL);
     console.log('Resolved API URL:', apiUrl);
     console.log('Constructed fetch URL:', kycEndpoint);
-
-    if (!apiUrl) {
-      console.warn('API URL not set, using fallback:', kycEndpoint);
-    }
 
     try {
       const res = await fetch(kycEndpoint, {
