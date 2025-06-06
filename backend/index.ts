@@ -86,5 +86,11 @@ app.post('/api/kyc', async (req, res) => {
   });
 });
 
+// Start server for local development
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 // Export for Vercel
 export default app;
